@@ -12,6 +12,7 @@ namespace PhysicsTestOnSlimDX
     public partial class Form1 : Form
     {
         Engine3D engine;
+        Particle particle;
         public Form1()
         {
             InitializeComponent();
@@ -20,7 +21,10 @@ namespace PhysicsTestOnSlimDX
         private void OnLoad(object sender, EventArgs e)
         {
             engine = new Engine3D();
+            particle = new Particle(engine);
+            engine.SetRenderObject(particle);
             engine.OnInitialize(this);
+     
             engine.Run();
         }
 

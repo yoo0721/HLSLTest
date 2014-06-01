@@ -70,7 +70,8 @@ namespace PhysicsTestOnSlimDX
                         RefreshRate = new SlimDX.Rational(60, 1),
                         Format = SlimDX.DXGI.Format.R8G8B8A8_UNorm
                     },
-                    Usage = SlimDX.DXGI.Usage.RenderTargetOutput
+                    Usage = SlimDX.DXGI.Usage.RenderTargetOutput,
+                    
                 },
                 out device,
                 out swapChain
@@ -130,8 +131,15 @@ namespace PhysicsTestOnSlimDX
 
             foreach (Effect effect in effectDictionary.Values)
             {
-                effect.GetVariableByName("ViewProjection")
-                    .AsMatrix().SetMatrix(mat);
+                try
+                {
+                    effect.GetVariableByName("ViewProjection")
+                        .AsMatrix().SetMatrix(mat);
+                }
+                catch(Exception e)
+                {
+                    return;
+                }
             }
 
         }
@@ -169,7 +177,7 @@ namespace PhysicsTestOnSlimDX
             int sleepTime = 1000 / 60 - (int)diffTime;
             if (sleepTime > 1)
             {
-                System.Threading.Thread.Sleep(sleepTime);
+          //      System.Threading.Thread.Sleep(sleepTime);
             }
             OnRender();
 
@@ -212,7 +220,7 @@ namespace PhysicsTestOnSlimDX
         }
 
 
-        Effect LoadEffect(string filePath)
+        public Effect LoadEffect(string filePath)
         {
             Effect effect;
             if (effectDictionary.ContainsKey(filePath))
@@ -238,7 +246,7 @@ namespace PhysicsTestOnSlimDX
         }
 
        // Textureの読み込み
-        ShaderResourceView LoadTexture(string filePath)
+        public ShaderResourceView LoadTexture(string filePath)
         {
             ShaderResourceView srv;
             if(textureDictionary.ContainsKey(filePath))
@@ -262,7 +270,7 @@ namespace PhysicsTestOnSlimDX
             return srv;
         }
 
-        SamplerState getSamplerState()
+        public SamplerState getSamplerState()
         {
             SamplerState samplerState;
             if( samplerList.Count > 0)
