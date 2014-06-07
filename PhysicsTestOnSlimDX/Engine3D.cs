@@ -8,8 +8,15 @@ using SlimDX.D3DCompiler;
 
 namespace PhysicsTestOnSlimDX
 {
-    class Engine3D
+    public class Engine3D : IDisposable
     {
+        static string[] CS_PROFILE = { "cs_main", "cs_5_0" };
+        static string[] VS_PROFILE = { "vs_main", "vs_5_0" };
+        static string[] GS_PROFILE = { "gs_main", "gs_5_0" };
+        static string[] PS_PROFILE = { "ps_main", "ps_5_0" };
+
+
+        StringBuilder debugString = new StringBuilder();
         private SlimDX.Direct3D11.Device device = null;
         private SlimDX.DXGI.SwapChain swapChain = null;
         private RenderTargetView renderTarget = null;
@@ -21,8 +28,11 @@ namespace PhysicsTestOnSlimDX
             = new Dictionary<string, ShaderResourceView>();
         List<SamplerState> samplerList = new List<SamplerState>();
 
-        DepthStencilView depthStencil;
+        Dictionary<string, ShaderBytecode> shaderBytecodeDictionary = new Dictionary<string, ShaderBytecode>();
+        Dictionary<string, ComputeShader> computeShaderDictionary = new Dictionary<string, ComputeShader>();
 
+        DepthStencilView depthStencil;
+        
         public Camera camera = new Camera();
         
         System.Drawing.Size clientSize;
@@ -35,9 +45,17 @@ namespace PhysicsTestOnSlimDX
 
         List<IRenderObject> renderObjectArray = new List<IRenderObject>();
 
-        public void Run()
+        ~Engine3D()
         {
-            SlimDX.Windows.MessagePump.Run(MainLoop);
+            swapChain.Dispose();
+        }
+        public void Dispose()
+        {
+            foreach(ShaderResourceView srv in textureDictionary.Values)
+            {
+                srv.Dispose();
+            }
+            device.Dispose();
         }
 
         public void SetRenderObject(IRenderObject renderObject)
@@ -145,41 +163,49 @@ namespace PhysicsTestOnSlimDX
         }
 
         long oldTime = 0;
-        protected virtual void MainLoop()
+        public virtual void MainLoop()
         {
-
-
-            long nowTime = sw.ElapsedMilliseconds;
             float diffTime = 0;
 
-            form.Text = camera.TEXT;
+            long nowTime = sw.ElapsedMilliseconds;
+
+            debugString.Append(camera.TEXT);
+
             if (!sw.IsRunning)
             {
                 sw.Start();
-                oldTime = sw.ElapsedMilliseconds;
-            }
-            if (fpsQueue.Count < 60)
-            {
-                fpsQueue.Enqueue(nowTime);
+                oldTime = nowTime;
+                diffTime = nowTime;
             }
             else
             {
-                diffTime = nowTime - fpsQueue.Dequeue();
-                float fps = 1000 * 60 / diffTime;
-                form.Text += "fps = " + fps;
-            }
+                if (fpsQueue.Count < 60)
+                {
+                    fpsQueue.Enqueue(nowTime);
+                }
+                else
+                {
+                    fpsQueue.Enqueue(nowTime);
+                    float fps = nowTime - fpsQueue.Dequeue();
+                    fps = 1000 * 60 / fps;
+                    debugString.Append("fps = " + fps);
+                }
 
-            diffTime = nowTime - oldTime;
-            oldTime = nowTime;
+                diffTime = nowTime - oldTime;
+                debugString.Append("diffTime = " + diffTime);
+                oldTime = nowTime;
+            }
 
             OnPreRender(diffTime * camera.Speed / 1000);
 
-            int sleepTime = 1000 / 60 - (int)diffTime;
+            float sleepTime = 1000f / 60f - diffTime;
             if (sleepTime > 1)
             {
-          //      System.Threading.Thread.Sleep(sleepTime);
+                //System.Threading.Thread.Sleep((int)sleepTime);
             }
             OnRender();
+            form.Text = debugString.ToString();
+            debugString.Clear();
 
 
         }
@@ -232,10 +258,11 @@ namespace PhysicsTestOnSlimDX
                 ShaderBytecode shaderBytecode = ShaderBytecode.CompileFromFile(
                 filePath,
                 "fx_5_0",
-                ShaderFlags.None,
+                ShaderFlags.Debug,
                 EffectFlags.None);
                 effect = new Effect(device, shaderBytecode);
                 effectDictionary.Add(filePath, effect);
+                
 
             }
             catch(Exception e)
@@ -243,6 +270,31 @@ namespace PhysicsTestOnSlimDX
                 return null;
             }
             return effect;
+        }
+
+        public ComputeShader Load(string filePath)
+        {
+            if (computeShaderDictionary.ContainsKey(filePath))
+            {
+                return computeShaderDictionary[filePath];
+            }
+            ShaderBytecode sb = ShaderBytecode.CompileFromFile(
+                filePath,
+                CS_PROFILE[0],
+                CS_PROFILE[1],
+#if DEBUG
+ ShaderFlags.Debug,
+#else
+                SharderFlags.None,
+#endif
+ EffectFlags.None
+                );
+            ComputeShader cs = new ComputeShader(device, sb);
+            if( cs != null)
+            {
+                computeShaderDictionary.Add(filePath, cs);
+            }
+            return cs;
         }
 
        // Textureの読み込み
@@ -266,7 +318,7 @@ namespace PhysicsTestOnSlimDX
             {
                 srv = null;
             }
-
+            
             return srv;
         }
 

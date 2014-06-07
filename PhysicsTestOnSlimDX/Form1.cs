@@ -11,23 +11,30 @@ namespace PhysicsTestOnSlimDX
 {
     public partial class Form1 : Form
     {
-        Engine3D engine;
+        public Engine3D engine;
         Particle particle;
+        bool isCreated = false;
         public Form1()
         {
             InitializeComponent();
+            engine = new Engine3D();
+        }
+
+        ~Form1()
+        {
+            engine.Dispose();
+            particle.Dispose();
         }
 
         private void OnLoad(object sender, EventArgs e)
         {
-            engine = new Engine3D();
+            
             particle = new Particle(engine);
             engine.SetRenderObject(particle);
             engine.OnInitialize(this);
-     
-            engine.Run();
+            isCreated = true;
         }
-
+        
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
             switch (e.KeyCode)

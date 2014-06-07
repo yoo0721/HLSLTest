@@ -5,13 +5,14 @@ float diffTime: register(b1);
 
 struct Status
 {
-	float3 position;
+	float3 offset;
 	float3 speed;
 	float3 spinAxis;
 	float1 spin;
 };
 
-StructuredBuffer<Status> statusBuffer: register(t1);
+Texture2D g_DecalMap : register(t0);
+StructuredBuffer<Status> statusBufferConst: register(u1);
 
 struct VS_IN
 {
@@ -20,14 +21,16 @@ struct VS_IN
 };
 
 
-Texture2D g_DecalMap : register(t0);
 SamplerState g_Sampler : register(s0);
 
 
 VS_IN Textured_HW_Instancing_VS(VS_IN input, uint instanceID : SV_InstanceID)
 {
 	VS_IN output;
-	output.pos = input.pos + float4(statusBuffer[instanceID].position, 1);
+	output.pos = input.pos + float4(statusBufferConst[instanceID].offset, 1);
+	//float4x4 world = worldMatrixConst[instanceID];
+		//world = transpose(world);
+	//output.pos = mul(input.pos, world);
 	//output.pos = output.pos + float4(1, 1, 1, 1);
 	output.pos = mul(output.pos, ViewProjection);
 	output.texel = input.texel;
@@ -63,7 +66,7 @@ void Textured_HW_Instancing_GS(triangle VS_IN input[3], inout TriangleStream<VS_
 	}
 	stream.RestartStrip();
 	*/
-	for (int i = 0; i < 36; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		stream.Append(input[i]);
 	}
@@ -82,22 +85,21 @@ float4 Textured_HW_Instancing_PS(VS_IN input) : SV_Target
 	*/
 	return output;
 }
-[numthreads(2,1,1)]
-void CS(uint id : SV_DispatchThreadID)
-{
-}
+
 
 
 
 technique11 Textured_HW_Instancing
 {
-	pass P0
+	pass P1
 	{
 		//SetComputeShader(CompileShader(cs_5_0, CS()));
 		SetVertexShader(CompileShader(vs_5_0, Textured_HW_Instancing_VS()));
 		SetGeometryShader(CompileShader(gs_5_0, Textured_HW_Instancing_GS()));
 		SetPixelShader(CompileShader(ps_5_0, Textured_HW_Instancing_PS()));
 	}
+
+
 }
 
 

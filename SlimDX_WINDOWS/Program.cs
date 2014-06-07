@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace PhysicsTestOnSlimDX
+using SlimDX.Windows;
+
+namespace SlimDX_WINDOWS
 {
     static class Program
     {
@@ -15,11 +17,10 @@ namespace PhysicsTestOnSlimDX
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Form1 form;
-            using (form = new Form1())
-            {
-                SlimDX.Windows.MessagePump.Run(form, form.engine.MainLoop);
-            }
+
+            Form1 renderForm = new Form1();
+
+            MessagePump.Run(renderForm, renderForm.engine.MainLoop);
         }
     }
 }

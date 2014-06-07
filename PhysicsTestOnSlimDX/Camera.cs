@@ -7,7 +7,7 @@ using SlimDX.Direct3D11;
 
 namespace PhysicsTestOnSlimDX
 {
-    class Camera
+    public class Camera
     {
         Vector3 eye;
         Vector3 target;
@@ -17,8 +17,8 @@ namespace PhysicsTestOnSlimDX
 
         public Camera()
         {
-            eye = new Vector3(0, 0, 1);
-            target = new Vector3();
+            eye = new Vector3(0, 0, 0);
+            target = new Vector3(1,1,1);
             up = new Vector3(0, 1, 0);
         }
         public Matrix ViewMatrix
